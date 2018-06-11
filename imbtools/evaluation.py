@@ -61,7 +61,14 @@ def summarize_datasets(datasets):
 def _calculate_stats(experiment):
     """Calculates stats for positive and negative scorers."""
     grouped_results = experiment.results_.groupby(experiment.results_.columns[:-1].tolist(), as_index=False)
-    stats = grouped_results.agg({'CV score': [np.mean, np.std]})
+    def standard_deviation_without_nan(n):
+        res = np.std(n)
+        if np.isnan(res):
+            return 0
+        else:
+            return res 
+
+    stats = grouped_results.agg({'CV score': [np.mean, standard_deviation_without_nan]})
     stats.columns = experiment.results_.columns.tolist()[:-1] + ['Mean CV score', 'Std CV score']
     return stats
 
@@ -124,8 +131,10 @@ def calculate_optimal_stats_wide(experiment):
 
     # Polpulate wide format of optimal stats
     oversamplers_names = [oversampler_name for oversampler_name, *_ in experiment.oversamplers]
+    print(experiment.oversamplers)
     optimal_stats_wide = pd.DataFrame(columns=oversamplers_names)
     for oversampler_name in oversamplers_names:
+        print(optimal_stats_wide)
         optimal_stats_wide[oversampler_name] = list(zip(optimal_mean_wide[oversampler_name], optimal_std_wide[oversampler_name]))
     return pd.concat([optimal_mean_wide[['Dataset', 'Classifier', 'Metric']], optimal_stats_wide], axis=1)
 
